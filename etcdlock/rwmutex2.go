@@ -6,9 +6,9 @@ import (
 	"context"
 	"errors"
 
+	recipes "github.com/etcd-io/etcd/contrib/recipes"
 	v3 "go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3/concurrency"
-	recipe "go.etcd.io/etcd/contrib/recipes"
 	"go.etcd.io/etcd/mvcc/mvccpb"
 )
 
@@ -84,7 +84,7 @@ func WaitEvents(ctx context.Context, c *v3.Client, key string, rev int64, evs []
 	defer cancel()
 	wc := c.Watch(ctx, key, v3.WithRev(rev))
 	if wc == nil {
-		return nil, recipe.ErrNoWatcher
+		return nil, recipes.ErrNoWatcher
 	}
 	return waitEvents(wc, evs), nil
 }
@@ -108,7 +108,6 @@ func waitEvents(wc v3.WatchChan, evs []mvccpb.Event_EventType) *v3.Event {
 func (rwm *RWMutex) Unlock() error {
 	if rwm.myKey != nil {
 		return rwm.myKey.Delete()
-	} else {
-		return errors.New("Lock cannot be released because it was not acquired yet")
 	}
+	return errors.New("Lock cannot be released because it was not acquired yet")
 }

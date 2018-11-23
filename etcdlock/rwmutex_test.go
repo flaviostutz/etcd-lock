@@ -10,7 +10,7 @@ import (
 	"go.etcd.io/etcd/clientv3/concurrency"
 )
 
-func ExampleRWMutex_Lock() {
+func exampleRWMutex_Lock() {
 	log.Println("CREATE CLIENT")
 	cli, err := clientv3.New(clientv3.Config{Endpoints: endpoints})
 	if err != nil {

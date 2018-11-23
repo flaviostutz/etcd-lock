@@ -23,7 +23,7 @@ import (
 	"go.etcd.io/etcd/clientv3/concurrency"
 )
 
-func ExampleMutex_Lock() {
+func exampleMutex_Lock() {
 	cli, err := clientv3.New(clientv3.Config{Endpoints: endpoints})
 	if err != nil {
 		log.Fatal(err)

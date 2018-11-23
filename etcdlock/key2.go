@@ -1,4 +1,4 @@
-//The same as recipes.key
+//The same as ETCD recipes key.go
 // Copyright 2016 The etcd Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
