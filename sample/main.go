@@ -25,11 +25,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer s1.Close()
-	s2, err := concurrency.NewSession(cli, concurrency.WithTTL(1))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer s2.Close()
+	// s2, err := concurrency.NewSession(cli, concurrency.WithTTL(1))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer s2.Close()
 	s3, err := concurrency.NewSession(cli, concurrency.WithTTL(1))
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +43,7 @@ func main() {
 
 	log.Println("PREPARE MUTEXES")
 	m1 := etcdlock.NewRWMutex(s1, "/mylocks/a")
-	m2 := etcdlock.NewRWMutex(s2, "/mylocks/a")
+	m2 := etcdlock.NewRWMutex(s1, "/mylocks/a")
 	m3 := etcdlock.NewRWMutex(s3, "/mylocks/a")
 	m4 := etcdlock.NewRWMutex(s4, "/mylocks/a")
 
