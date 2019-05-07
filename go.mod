@@ -1,4 +1,4 @@
-module github.com/jairsjunior/etcd-lock
+module github.com/flaviostutz/etcd-lock
 
 go 1.12
 
@@ -9,6 +9,8 @@ require (
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/etcd-io/etcd v3.3.13+incompatible // indirect
+	github.com/flaviostutz/etcd-lock v0.0.0-20181125080505-2de27b1584e8
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/google/btree v1.0.0 // indirect
@@ -25,6 +27,7 @@ require (
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
+	go.etcd.io/etcd v3.3.13+incompatible
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.10.0 // indirect
