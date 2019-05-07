@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	recipes "github.com/etcd-io/etcd/contrib/recipes"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
+	recipes "github.com/coreos/etcd/contrib/recipes"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 )
 
 func exampleRWMutex_Lock() {

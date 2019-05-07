@@ -6,9 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/flaviostutz/etcd-lock/etcdlock"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 )
 
 func exampleRWMutex2_Lock() {
@@ -61,12 +60,12 @@ func exampleRWMutex2_Lock() {
 	log.Println("PREPARE MUTEXES")
 
 	//prepare
-	m1 := etcdlock.NewRWMutex(s1, "/my-lock/a")
-	m2 := etcdlock.NewRWMutex(s2, "/my-lock/a")
-	m3 := etcdlock.NewRWMutex(s3, "/my-lock/a")
-	m4 := etcdlock.NewRWMutex(s4, "/my-lock/a")
-	m5 := etcdlock.NewRWMutex(s5, "/my-lock/a")
-	m6 := etcdlock.NewRWMutex(s5, "/my-lock/a")
+	m1 := NewRWMutex(s1, "/my-lock/a")
+	m2 := NewRWMutex(s2, "/my-lock/a")
+	m3 := NewRWMutex(s3, "/my-lock/a")
+	m4 := NewRWMutex(s4, "/my-lock/a")
+	m5 := NewRWMutex(s5, "/my-lock/a")
+	m6 := NewRWMutex(s5, "/my-lock/a")
 
 	log.Println("TRY LOCKS")
 	//try locks
