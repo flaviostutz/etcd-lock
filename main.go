@@ -6,11 +6,10 @@ import (
 	_ "testing"
 	_ "time"
 
-	_ "github.com/etcd-io/etcd/contrib/recipes"
-	_ "github.com/flaviostutz/etcd-lock/etcdlock"
-	_ "go.etcd.io/etcd/clientv3"
-	_ "go.etcd.io/etcd/clientv3/concurrency"
-	_ "go.etcd.io/etcd/integration"
-	_ "go.etcd.io/etcd/mvcc/mvccpb"
-	_ "go.etcd.io/etcd/pkg/testutil"
+	_ "github.com/coreos/etcd/contrib/recipes"
+	_ "github.com/coreos/etcd/clientv3"
+	_ "github.com/coreos/etcd/clientv3/concurrency"
+	_ "github.com/coreos/etcd/integration"
+	_ "github.com/coreos/etcd/mvcc/mvccpb"
+	_ "github.com/coreos/etcd/pkg/testutil"
 )

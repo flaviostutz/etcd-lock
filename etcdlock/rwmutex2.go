@@ -6,10 +6,10 @@ import (
 	"context"
 	"errors"
 
-	recipes "github.com/etcd-io/etcd/contrib/recipes"
-	v3 "go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
-	"go.etcd.io/etcd/mvcc/mvccpb"
+	v3 "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
+	recipes "github.com/coreos/etcd/contrib/recipes"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 //RWMutex struct for RWLock mutext

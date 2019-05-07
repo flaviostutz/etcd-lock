@@ -21,9 +21,9 @@ import (
 	"strings"
 	"time"
 
-	v3 "go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
-	recipe "go.etcd.io/etcd/contrib/recipes"
+	v3 "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
+	recipe "github.com/coreos/etcd/contrib/recipes"
 )
 
 // RemoteKV is a key/revision pair created by the client and stored on etcd
