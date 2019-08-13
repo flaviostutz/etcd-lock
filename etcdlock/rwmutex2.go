@@ -31,16 +31,13 @@ func (rwm *RWMutex) RLock(ctx context.Context) error {
 		return err
 	}
 	rwm.myKey = rk
-	// wait until nodes with "write-" and a lower revision number than myKey are gone
-	for {
-		if done, werr := rwm.waitOnLastRev(ctx, rwm.pfx+"write"); done || werr != nil {
-			err = rwm.myKey.Delete()
-			if err != nil {
-				return err
-			}
-			return werr
-		}
+	// wait until nodes with "/write" and a lower revision number than myKey are gone
+	_, err = rwm.waitOnLastRev(ctx, rwm.pfx+"write")
+	if err != nil {
+		_ = rwm.myKey.Delete()
+		return err
 	}
+	return nil
 }
 
 //RWLock Read Write Lock. Will obey context for the deadline or canceling of lock acquirement
@@ -51,16 +48,12 @@ func (rwm *RWMutex) RWLock(ctx context.Context) error {
 	}
 	rwm.myKey = rk
 	// wait until all keys of lower revision than myKey are gone
-	for {
-		if done, werr := rwm.waitOnLastRev(ctx, rwm.pfx); done || werr != nil {
-			err = rwm.myKey.Delete()
-			if err != nil {
-				return err
-			}
-			return werr
-		}
-		//  get the new lowest key until this is the only one left
+	_, err = rwm.waitOnLastRev(ctx, rwm.pfx)
+	if err != nil {
+		_ = rwm.myKey.Delete()
+		return err
 	}
+	return nil
 }
 
 // waitOnLowest will wait on the last key with a revision < rwm.myKey.Revision with a
