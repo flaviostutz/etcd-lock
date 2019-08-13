@@ -70,17 +70,17 @@ func (rwm *RWMutex) waitOnLastRev(ctx context.Context, pfx string) (bool, error)
 		return true, nil
 	}
 	// wait for release on blocking key
-	_, err = WaitEvents(
+	_, err = WaitEvent(
 		ctx,
 		client,
 		string(lastKey.Kvs[0].Key),
 		rwm.myKey.Revision(),
-		[]mvccpb.Event_EventType{mvccpb.DELETE})
+		mvccpb.DELETE)
 	return false, err
 }
 
-// WaitEvents waits on a key until it observes the given events and returns the final one or returns error if the channel closes.
-func WaitEvents(ctx context.Context, c *v3.Client, key string, rev int64, evs []mvccpb.Event_EventType) (*v3.Event, error) {
+// WaitEvent waits on a key until it observes the given event and returns the matched one or returns error if the channel closes.
+func WaitEvent(ctx context.Context, c *v3.Client, key string, rev int64, event mvccpb.Event_EventType) (*v3.Event, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	wc := c.Watch(ctx, key, v3.WithRev(rev))
@@ -93,14 +93,9 @@ func WaitEvents(ctx context.Context, c *v3.Client, key string, rev int64, evs []
 			if err := keyChannel.Err(); err != nil {
 				return nil, err
 			}
-			//check keyChannel.Events contains all items of evs
-			i := 0
 			for _, ev := range keyChannel.Events {
-				if ev.Type == evs[i] {
-					i++
-					if i == len(evs) {
-						return ev, nil
-					}
+				if ev.Type == event {
+					return ev, nil
 				}
 			}
 		case <-ctx.Done():
