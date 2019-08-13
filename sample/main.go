@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"log"
 	"time"
 
 	"github.com/flaviostutz/etcd-lock/etcdlock"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/concurrency"
 )
 
 func main() {
