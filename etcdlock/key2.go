@@ -24,6 +24,7 @@ import (
 	v3 "github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
 	recipe "github.com/coreos/etcd/contrib/recipes"
+	"github.com/google/uuid"
 )
 
 // RemoteKV is a key/revision pair created by the client and stored on etcd
@@ -154,8 +155,12 @@ func newUniqueEphemeralKey(s *concurrency.Session, prefix string) (*EphemeralKV,
 
 // newUniqueEphemeralKV creates a new unique key/value pair associated with a session lease
 func newUniqueEphemeralKV(s *concurrency.Session, prefix, val string) (ek *EphemeralKV, err error) {
+	randomSuffix, err := uuid.NewRandom()
+	if err != nil {
+		return nil, err
+	}
+	newKey := fmt.Sprintf("%s/%v", prefix, randomSuffix.String())
 	for {
-		newKey := fmt.Sprintf("%s/%v", prefix, time.Now().UnixNano())
 		ek, err = newEphemeralKV(s, newKey, val)
 		if err == nil || err != recipe.ErrKeyExists {
 			break
