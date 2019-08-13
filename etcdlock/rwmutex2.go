@@ -109,5 +109,5 @@ func (rwm *RWMutex) Unlock() error {
 	if rwm.myKey != nil {
 		return rwm.myKey.Delete()
 	}
-	return errors.New("Lock cannot be released because it was not acquired yet")
+	return errors.New("lock cannot be released because it was not acquired yet")
 }
