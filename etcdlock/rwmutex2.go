@@ -79,7 +79,7 @@ func (rwm *RWMutex) waitOnLastRev(ctx context.Context, pfx string) (bool, error)
 	return false, err
 }
 
-// WaitEvents waits on a key until it observes the given events and returns the final one.
+// WaitEvents waits on a key until it observes the given events and returns the final one or returns error if the channel closes.
 func WaitEvents(ctx context.Context, c *v3.Client, key string, rev int64, evs []mvccpb.Event_EventType) (*v3.Event, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -87,22 +87,26 @@ func WaitEvents(ctx context.Context, c *v3.Client, key string, rev int64, evs []
 	if wc == nil {
 		return nil, recipes.ErrNoWatcher
 	}
-	return waitEvents(wc, evs), nil
-}
-
-func waitEvents(wc v3.WatchChan, evs []mvccpb.Event_EventType) *v3.Event {
-	i := 0
-	for wresp := range wc {
-		for _, ev := range wresp.Events {
-			if ev.Type == evs[i] {
-				i++
-				if i == len(evs) {
-					return ev
+	for {
+		select {
+		case keyChannel := <-wc:
+			if err := keyChannel.Err(); err != nil {
+				return nil, err
+			}
+			//check keyChannel.Events contains all items of evs
+			i := 0
+			for _, ev := range keyChannel.Events {
+				if ev.Type == evs[i] {
+					i++
+					if i == len(evs) {
+						return ev, nil
+					}
 				}
 			}
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
 	}
-	return nil
 }
 
 //Unlock a previously acquired lock
