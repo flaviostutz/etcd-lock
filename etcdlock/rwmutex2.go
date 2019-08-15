@@ -5,11 +5,9 @@ package etcdlock
 import (
 	"context"
 	"errors"
-
 	v3 "github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
 	recipes "github.com/coreos/etcd/contrib/recipes"
-	"github.com/coreos/etcd/mvcc/mvccpb"
 )
 
 //RWMutex struct for RWLock mutext
@@ -32,8 +30,7 @@ func (rwm *RWMutex) RLock(ctx context.Context) error {
 	}
 	rwm.myKey = rk
 	// wait until nodes with "/write" and a lower revision number than myKey are gone
-	_, err = rwm.waitOnLastRev(ctx, rwm.pfx+"write")
-	if err != nil {
+	if err = rwm.waitOnLastRev(ctx, rwm.pfx+"write"); err != nil {
 		_ = rwm.myKey.Delete()
 		return err
 	}
@@ -48,8 +45,7 @@ func (rwm *RWMutex) RWLock(ctx context.Context) error {
 	}
 	rwm.myKey = rk
 	// wait until all keys of lower revision than myKey are gone
-	_, err = rwm.waitOnLastRev(ctx, rwm.pfx)
-	if err != nil {
+	if err = rwm.waitOnLastRev(ctx, rwm.pfx); err != nil {
 		_ = rwm.myKey.Delete()
 		return err
 	}
@@ -58,50 +54,63 @@ func (rwm *RWMutex) RWLock(ctx context.Context) error {
 
 // waitOnLowest will wait on the last key with a revision < rwm.myKey.Revision with a
 // given prefix. If there are no keys left to wait on, return true.
-func (rwm *RWMutex) waitOnLastRev(ctx context.Context, pfx string) (bool, error) {
+func (rwm *RWMutex) waitOnLastRev(ctx context.Context, pfx string) error {
 	client := rwm.s.Client()
-	// get key that's blocking myKey
-	opts := append(v3.WithLastRev(), v3.WithMaxModRev(rwm.myKey.Revision()-1))
-	lastKey, err := client.Get(ctx, pfx, opts...)
+	// get keys that's blocking myKey
+	lastKeys, err := client.Get(ctx, pfx, v3.WithPrefix(), v3.WithMaxModRev(rwm.myKey.Revision()-1))
 	if err != nil {
-		return false, err
+		return err
 	}
-	if len(lastKey.Kvs) == 0 {
-		return true, nil
+	if len(lastKeys.Kvs) == 0 {
+		return nil
 	}
-	// wait for release on blocking key
-	_, err = WaitEvent(
+	// wait for release on blocking keys
+	err = WaitKeysDelete(
 		ctx,
 		client,
-		string(lastKey.Kvs[0].Key),
-		rwm.myKey.Revision(),
-		mvccpb.DELETE)
-	return false, err
+		pfx,
+		lastKeys)
+	return err
 }
 
-// WaitEvent waits on a key until it observes the given event and returns the matched one or returns error if the channel closes.
-func WaitEvent(ctx context.Context, c *v3.Client, key string, rev int64, event mvccpb.Event_EventType) (*v3.Event, error) {
+// WaitKeysDelete waits on a keys until it observes the given delete event or returns error if the channel closes.
+func WaitKeysDelete(ctx context.Context, c *v3.Client, prefix string, response *v3.GetResponse) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	wc := c.Watch(ctx, key, v3.WithRev(rev))
+	//WithFilterPut discards PUT events from the watcher, so just DELETE events are being observed
+	wc := c.Watch(ctx, prefix, v3.WithPrefix(), v3.WithFilterPut())
 	if wc == nil {
-		return nil, recipes.ErrNoWatcher
+		return recipes.ErrNoWatcher
 	}
+
+	keys := getKeysFromResponse(response)
+
+	// loop until channel error, channel closes or all keys are removed from map
 	for {
 		select {
 		case keyChannel := <-wc:
 			if err := keyChannel.Err(); err != nil {
-				return nil, err
+				return err
 			}
 			for _, ev := range keyChannel.Events {
-				if ev.Type == event {
-					return ev, nil
+				delete(keys, string(ev.Kv.Key))
+				if len(keys) == 0 {
+					return nil
 				}
 			}
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return ctx.Err()
 		}
 	}
+}
+
+func getKeysFromResponse(response *v3.GetResponse) map[string]string {
+	keys := make(map[string]string, len(response.Kvs))
+	for _, value := range response.Kvs {
+		key := string(value.Key)
+		keys[key] = key
+	}
+	return keys
 }
 
 //Unlock a previously acquired lock
