@@ -9,7 +9,7 @@ Distributed locks using ETCD server. Currently have support for Read Write locks
 
 ## Example
 
-```
+```go
 log.Println("CREATE CLIENT")
 cli, err := clientv3.New(clientv3.Config{Endpoints: []string{"etcd0:2379"}})
 if err != nil {
@@ -119,7 +119,7 @@ go func() {
 ```
 
 Output:
-```
+```text
 PREPARE MUTEXES
 LOCK1
 LOCK2
