@@ -5,6 +5,7 @@ package etcdlock
 import (
 	"context"
 	"errors"
+	"fmt"
 	v3 "github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/concurrency"
 	recipes "github.com/coreos/etcd/contrib/recipes"
@@ -31,8 +32,9 @@ func (rwm *RWMutex) RLock(ctx context.Context) error {
 	rwm.myKey = rk
 	// wait until nodes with "/write" and a lower revision number than myKey are gone
 	if err = rwm.waitOnLastRev(ctx, rwm.pfx+"write"); err != nil {
-		_ = rwm.myKey.Delete()
-		return err
+		if dErr := rwm.myKey.Delete(); dErr != nil {
+			return errors.New(fmt.Sprintf("error getting lock: %s; error deleting key %s from etcd: %s.", err.Error(), rwm.myKey.key, dErr.Error()))
+		}
 	}
 	return nil
 }
@@ -46,7 +48,9 @@ func (rwm *RWMutex) RWLock(ctx context.Context) error {
 	rwm.myKey = rk
 	// wait until all keys of lower revision than myKey are gone
 	if err = rwm.waitOnLastRev(ctx, rwm.pfx); err != nil {
-		_ = rwm.myKey.Delete()
+		if dErr := rwm.myKey.Delete(); dErr != nil {
+			return errors.New(fmt.Sprintf("error getting lock: %s; error deleting key %s from etcd: %s.", err.Error(), rwm.myKey.key, dErr.Error()))
+		}
 		return err
 	}
 	return nil
