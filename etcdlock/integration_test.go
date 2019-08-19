@@ -53,11 +53,15 @@ func TestLockMustBeGrantedToTheNextOnQueue(t *testing.T) {
 
 	go func() {
 		time.Sleep(time.Second) //wait the first one
-		log.Println("putting second on queue")
+		log.Println("putting second on queue. Read lock must return context deadline exceed error.")
 		ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 		mutex := NewRWMutex(sessions[2], key)
-		if err := mutex.RWLock(ctx); err != nil {
-			log.Println("got error as expected for the second")
+		if err := mutex.RLock(ctx); err != nil {
+			if strings.Contains(err.Error(), "deadline exceeded") {
+				log.Println("got 'context deadline exceeded' error as expected for the second one")
+			} else {
+				t.Fatal(fmt.Sprintf("expected error 'context deadline exceeded' but got %s", err.Error()))
+			}
 		} else {
 			t.Fatal("the first to be registered must get the lock but the second one got it.")
 		}
@@ -65,11 +69,15 @@ func TestLockMustBeGrantedToTheNextOnQueue(t *testing.T) {
 
 	go func() {
 		time.Sleep(1500 * time.Millisecond) //wait the second one
-		log.Println("putting third on queue")
+		log.Println("putting third on queue. Write lock must return context deadline exceed error.")
 		ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
 		mutex := NewRWMutex(sessions[3], key)
 		if err := mutex.RWLock(ctx); err != nil {
-			log.Println("got error as expected for the third")
+			if strings.Contains(err.Error(), "deadline exceeded") {
+				log.Println("got error as expected for the third")
+			} else {
+				t.Fatal(fmt.Sprintf("expected error 'context deadline exceeded' but got %s", err.Error()))
+			}
 		} else {
 			t.Fatal("the first to be registered must get the lock but the third one got it.")
 		}
@@ -241,8 +249,8 @@ func TestGetWriteLockAfterAllReadLockRelease(t *testing.T) {
 	log.Println("--------> GetWriteLockAfterAllReadLockRelease finished successfully")
 }
 
-func TestDeadLineExceededError(t *testing.T) {
-	log.Println("--------> DeadLineExceededError started")
+func TestDeadLineExceededErrorWriteLock(t *testing.T) {
+	log.Println("--------> TestDeadLineExceededErrorWriteLock started")
 	log.Println("Must get 'context deadline exceeded' error when the context parameter passed to RLock or RWLock have deadline or timeout and the time is reached")
 	const key = "/key/to/lock"
 	const sessionTTLSeconds = 1
@@ -256,6 +264,7 @@ func TestDeadLineExceededError(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// get read lock and test error getting write lock
 	ctxSuccess, _ := context.WithTimeout(context.Background(), time.Second)
 	readLockSuccess := NewRWMutex(session, key)
 	if err := readLockSuccess.RLock(ctxSuccess); err != nil {
@@ -276,7 +285,50 @@ func TestDeadLineExceededError(t *testing.T) {
 		t.Fatal("expected error 'context deadline exceeded' but got nil")
 	}
 
-	log.Println("--------> DeadLineExceededError finished successfully")
+	_ = readLockSuccess.Unlock()
+
+	log.Println("--------> TestDeadLineExceededErrorWriteLock finished successfully")
+}
+
+func TestDeadLineExceededErrorReadLock(t *testing.T) {
+	log.Println("--------> TestDeadLineExceededErrorReadLock started")
+	log.Println("Must get 'context deadline exceeded' error when the context parameter passed to RLock or RWLock have deadline or timeout and the time is reached")
+	const key = "/key/to/lock"
+	const sessionTTLSeconds = 1
+	etcdClient, err := clientv3.New(clientv3.Config{Endpoints: endpoints})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer etcdClient.Close()
+	session, err := concurrency.NewSession(etcdClient, concurrency.WithTTL(sessionTTLSeconds))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// get write lock and test error getting read lock
+	ctxSuccess, _ := context.WithTimeout(context.Background(), time.Second)
+	writeLockSuccess := NewRWMutex(session, key)
+	if err := writeLockSuccess.RWLock(ctxSuccess); err != nil {
+		t.Fatal(fmt.Sprintf("lockSuccess write lock error %s\n", err.Error()))
+	}
+	log.Printf("key %s locked successful for write\n", key)
+
+	log.Printf("try read lock for key %s for 1 seconds\n", key)
+	ctxError, _ := context.WithTimeout(context.Background(), time.Second)
+	readLockError := NewRWMutex(session, key)
+	if err := readLockError.RLock(ctxError); err != nil {
+		if strings.Contains(err.Error(), "deadline exceeded") {
+			log.Printf("error occured as expected for key %s", key)
+		} else {
+			t.Fatal(fmt.Sprintf("expected error 'context deadline exceeded' but got %s", err.Error()))
+		}
+	} else {
+		t.Fatal("expected error 'context deadline exceeded' but got nil")
+	}
+
+	_ = writeLockSuccess.Unlock()
+
+	log.Println("--------> TestDeadLineExceededErrorReadLock finished successfully")
 }
 
 func TestSyncMultiplesReadLock(t *testing.T) {

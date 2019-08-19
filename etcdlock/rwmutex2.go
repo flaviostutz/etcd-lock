@@ -35,6 +35,7 @@ func (rwm *RWMutex) RLock(ctx context.Context) error {
 		if dErr := rwm.myKey.Delete(); dErr != nil {
 			return errors.New(fmt.Sprintf("error getting lock: %s; error deleting key %s from etcd: %s.", err.Error(), rwm.myKey.key, dErr.Error()))
 		}
+		return err
 	}
 	return nil
 }
